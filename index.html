@@ -6,48 +6,94 @@
 
 <style>
 body {
-  font-family: Arial;
-  text-align: center;
-  background: #0f172a;
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(to bottom, #0f172a, #020617);
   color: white;
-  transition: background 0.5s;
+  text-align: center;
+  overflow-x: hidden;
 }
 
+/* HEADER */
 h1 {
-  margin-top: 30px;
-  font-size: 40px;
-}
-
-.value {
-  font-size: 60px;
   margin-top: 20px;
+  font-size: 38px;
 }
 
-.status {
-  font-size: 30px;
-  margin-top: 10px;
+/* CARD LAYOUT */
+.dashboard {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: 20px;
+  gap: 30px;
+}
+
+/* CARD */
+.card {
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 20px;
+  width: 280px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.4);
+}
+
+/* VALUE */
+.value {
+  font-size: 48px;
   font-weight: bold;
 }
 
-.bar-container {
-  width: 80%;
-  height: 30px;
-  background: #1e293b;
-  margin: 30px auto;
-  border-radius: 20px;
-  overflow: hidden;
+/* STATUS */
+.status {
+  font-size: 24px;
+  margin-top: 10px;
 }
 
-.bar {
-  height: 100%;
-  width: 0%;
-  transition: width 0.5s;
+/* GAUGE */
+.gauge-container {
+  width: 200px;
+  height: 200px;
+  margin: auto;
 }
 
-.safe-bg { background: #064e3b; }
-.warning-bg { background: #78350f; }
-.danger-bg { background: #7f1d1d; }
+svg {
+  transform: rotate(-90deg);
+}
 
+circle {
+  fill: none;
+  stroke-width: 15;
+}
+
+.bg {
+  stroke: #334155;
+}
+
+.progress {
+  stroke: #00ff88;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.8s ease;
+}
+
+/* RIVER EFFECT */
+.river {
+  position: fixed;
+  bottom: 0;
+  width: 200%;
+  height: 120px;
+  background: url("https://i.imgur.com/8GQZ5jR.png");
+  background-size: cover;
+  animation: flow 8s linear infinite;
+  opacity: 0.4;
+}
+
+@keyframes flow {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* STATUS COLORS */
 .safe { color: #00ff88; }
 .warning { color: #ffd000; }
 .danger { color: #ff3b3b; animation: blink 1s infinite; }
@@ -65,65 +111,85 @@ h1 {
 
 <h1>HỆ THỐNG CẢNH BÁO LŨ</h1>
 
-<div class="value" id="value">--</div>
-<div class="status" id="status">Đang kết nối...</div>
+<div class="dashboard">
 
-<div class="bar-container">
-  <div class="bar" id="waterBar"></div>
+  <!-- Gauge Card -->
+  <div class="card">
+    <h2>Mực Nước</h2>
+    <div class="gauge-container">
+      <svg width="200" height="200">
+        <circle cx="100" cy="100" r="80" class="bg"/>
+        <circle cx="100" cy="100" r="80" class="progress"
+                stroke-dasharray="502"
+                stroke-dashoffset="502"
+                id="gaugeCircle"/>
+      </svg>
+      <div class="value" id="value">--</div>
+    </div>
+  </div>
+
+  <!-- Status Card -->
+  <div class="card">
+    <h2>Trạng Thái</h2>
+    <div class="status" id="status">Đang kết nối...</div>
+  </div>
+
 </div>
+
+<div class="river"></div>
 
 <script>
 
 const token = "aDr0xW5cnhpazhuPPuIDUQWZGmtRtAhY";
+const maxWater = 2500; // điều chỉnh nếu cần
 
 function fetchData() {
 
+  // Lấy giá trị nước
   fetch(`https://blynk.cloud/external/api/get?token=${token}&V0`)
-    .then(res => res.json())
-    .then(data => {
+    .then(res => res.text())
+    .then(value => {
 
-      if (data.error) {
+      if (value.includes("error")) {
         document.getElementById("status").innerText = "Token sai!";
         return;
       }
 
-      let value = parseInt(data);
-
+      value = parseInt(value);
       document.getElementById("value").innerText = value;
 
-      let percent = Math.min((value / 2500) * 100, 100);
-      document.getElementById("waterBar").style.width = percent + "%";
+      let percent = Math.min(value / maxWater, 1);
+      let circumference = 2 * Math.PI * 80;
+      let offset = circumference - percent * circumference;
+
+      document.getElementById("gaugeCircle")
+        .style.strokeDashoffset = offset;
     });
 
+  // Lấy trạng thái
   fetch(`https://blynk.cloud/external/api/get?token=${token}&V1`)
     .then(res => res.text())
     .then(status => {
 
       const statusDiv = document.getElementById("status");
-      const body = document.body;
-      const bar = document.getElementById("waterBar");
+      const gauge = document.getElementById("gaugeCircle");
 
       statusDiv.innerText = status;
       statusDiv.className = "status";
-      body.className = "";
-      bar.style.background = "";
 
       if (status.includes("AN TOAN")) {
         statusDiv.classList.add("safe");
-        body.classList.add("safe-bg");
-        bar.style.background = "#00ff88";
+        gauge.style.stroke = "#00ff88";
       }
 
       else if (status.includes("NGUY HIEM") && !status.includes("RAT")) {
         statusDiv.classList.add("warning");
-        body.classList.add("warning-bg");
-        bar.style.background = "#ffd000";
+        gauge.style.stroke = "#ffd000";
       }
 
       else if (status.includes("RAT")) {
         statusDiv.classList.add("danger");
-        body.classList.add("danger-bg");
-        bar.style.background = "#ff3b3b";
+        gauge.style.stroke = "#ff3b3b";
       }
 
     });
