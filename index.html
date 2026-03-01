@@ -2,7 +2,7 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Flood Monitoring System</title>
+<title>Hệ thống cảnh báo ngập lụt</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
@@ -17,6 +17,8 @@ body{
 .header{
   padding:20px;
   background:#1e293b;
+  font-size:28px;
+  font-weight:bold;
 }
 
 .grid{
@@ -31,12 +33,14 @@ body{
   background:#1e293b;
   padding:20px;
   border-radius:15px;
+  width:260px;
 }
 
 #riverBox{
   width:150px;
   height:350px;
   border:3px solid white;
+  margin:auto;
   position:relative;
 }
 
@@ -50,8 +54,8 @@ body{
 }
 
 .status{
-  font-size:26px;
-  padding:15px;
+  font-size:22px;
+  padding:12px;
   border-radius:10px;
   font-weight:bold;
 }
@@ -65,7 +69,7 @@ body{
 }
 
 .valueBig{
-  font-size:40px;
+  font-size:32px;
   margin:10px 0;
 }
 
@@ -79,13 +83,13 @@ canvas{
 <body>
 
 <div class="header">
-<h1>🌊 FLOOD MONITORING SYSTEM</h1>
+🌊 HỆ THỐNG CẢNH BÁO NGẬP LỤT
 </div>
 
 <div class="grid">
 
 <div class="card">
-<h2>River Level</h2>
+<h2>Mực nước</h2>
 <div id="riverBox">
 <div id="water"></div>
 </div>
@@ -93,9 +97,9 @@ canvas{
 </div>
 
 <div class="card">
-<h2>Status</h2>
-<div id="statusBox" class="status safe">AN TOAN</div>
-<h3>ADC: <span id="adcValue">0</span></h3>
+<h2>Trạng thái</h2>
+<div id="statusBox" class="status safe">AN TOÀN</div>
+<h3>Giá trị ADC: <span id="adcValue">0</span></h3>
 </div>
 
 </div>
@@ -106,7 +110,7 @@ canvas{
 
 const TOKEN = "aDr0xW5cnhpazhuPPuIDUQWZGmtRtAhY";
 
-// ==== BIỂU ĐỒ ====
+// ===== BIỂU ĐỒ =====
 let ctx = document.getElementById('chart').getContext('2d');
 
 let chart = new Chart(ctx,{
@@ -114,7 +118,7 @@ let chart = new Chart(ctx,{
   data:{
     labels:[],
     datasets:[{
-      label:'Water Level (cm)',
+      label:'Mực nước (cm)',
       data:[],
       borderColor:'#3b82f6',
       borderWidth:3,
@@ -130,7 +134,17 @@ let chart = new Chart(ctx,{
   }
 });
 
-// ==== FETCH DATA ====
+// ===== HÀM CHUYỂN DATA BLYNK =====
+function cleanValue(value){
+  try{
+    let parsed = JSON.parse(value);
+    return parsed[0];
+  }catch{
+    return value;
+  }
+}
+
+// ===== FETCH =====
 async function updateData(){
 
   try{
@@ -139,9 +153,9 @@ async function updateData(){
     let cmRes  = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V1`);
     let stRes  = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V2`);
 
-    let adc = await adcRes.text();
-    let cm  = await cmRes.text();
-    let st  = await stRes.text();
+    let adc = cleanValue(await adcRes.text());
+    let cm  = cleanValue(await cmRes.text());
+    let st  = cleanValue(await stRes.text());
 
     adc = parseInt(adc);
     cm  = parseFloat(cm);
@@ -150,22 +164,24 @@ async function updateData(){
     document.getElementById("adcValue").innerText = adc;
     document.getElementById("waterValue").innerText = cm.toFixed(2) + " cm";
 
+    // Tính % nước
     let percent = ((cm - 2) / 4) * 100;
+    percent = Math.max(0, Math.min(100, percent));
     document.getElementById("water").style.height = percent + "%";
 
     let statusBox = document.getElementById("statusBox");
     statusBox.className = "status";
 
     if(st === 0){
-      statusBox.innerText = "AN TOAN";
+      statusBox.innerText = "AN TOÀN";
       statusBox.classList.add("safe");
     }
     else if(st === 1){
-      statusBox.innerText = "CANH BAO";
+      statusBox.innerText = "CẢNH BÁO";
       statusBox.classList.add("warning");
     }
     else{
-      statusBox.innerText = "RAT NGUY HIEM";
+      statusBox.innerText = "RẤT NGUY HIỂM";
       statusBox.classList.add("danger");
     }
 
@@ -182,7 +198,7 @@ async function updateData(){
     chart.update();
 
   }catch(error){
-    console.log("Loi ket noi Blynk:", error);
+    console.log("Lỗi kết nối Blynk:", error);
   }
 }
 
