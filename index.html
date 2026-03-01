@@ -2,218 +2,194 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Hệ Thống Cảnh Báo Ngập Lụt</title>
+<title>Flood Monitoring System</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 body{
-margin:0;
-font-family:'Segoe UI',sans-serif;
-background:#0b1220;
-color:#e2e8f0;
+  margin:0;
+  font-family:Segoe UI;
+  background:#0f172a;
+  color:white;
+  text-align:center;
 }
 
-h1{
-text-align:center;
-padding:20px;
-font-size:32px;
-letter-spacing:2px;
+.header{
+  padding:20px;
+  background:#1e293b;
+  box-shadow:0 0 20px black;
 }
 
-.dashboard{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
-gap:20px;
-padding:20px;
+.grid{
+  display:flex;
+  justify-content:center;
+  gap:40px;
+  margin-top:30px;
+  flex-wrap:wrap;
 }
 
 .card{
-background:#111827;
-border-radius:15px;
-padding:20px;
-box-shadow:0 0 15px rgba(0,255,200,0.05);
+  background:#1e293b;
+  padding:20px;
+  border-radius:15px;
+  box-shadow:0 0 20px rgba(0,0,0,0.5);
 }
 
-.value{
-font-size:48px;
-font-weight:bold;
+#riverBox{
+  width:150px;
+  height:350px;
+  border:3px solid white;
+  position:relative;
+}
+
+#water{
+  position:absolute;
+  bottom:0;
+  width:100%;
+  background:linear-gradient(to top,#2563eb,#60a5fa);
+  height:0%;
+  transition:0.5s;
+}
+
+.scale{
+  position:absolute;
+  left:-30px;
+  color:white;
+  font-size:12px;
 }
 
 .status{
-font-size:22px;
-margin-top:10px;
+  font-size:26px;
+  padding:15px;
+  border-radius:10px;
+  font-weight:bold;
 }
 
-/* GAUGE */
-.gauge{
-position:relative;
-width:220px;
-height:220px;
-border-radius:50%;
-border:6px solid #334155;
-margin:auto;
-overflow:hidden;
+.safe{ background:#16a34a; box-shadow:0 0 20px #16a34a;}
+.warning{ background:#facc15; color:black; box-shadow:0 0 20px #facc15;}
+.danger{ background:#dc2626; animation:blink 1s infinite; box-shadow:0 0 20px red;}
+
+@keyframes blink{
+  50%{ opacity:0.5;}
 }
 
-.water{
-position:absolute;
-bottom:0;
-width:100%;
-background:#22d3ee;
-transition:height 0.8s ease;
+.valueBig{
+  font-size:40px;
+  margin:10px 0;
 }
 
-/* DÒNG SÔNG */
-.river-container{
-position:fixed;
-bottom:0;
-width:100%;
-height:200px;
-background:linear-gradient(to top,#0ea5e9,#0284c7);
+canvas{
+  max-width:900px;
+  margin-top:40px;
 }
-
-.river-scale{
-position:absolute;
-left:20px;
-bottom:0;
-height:100%;
-display:flex;
-flex-direction:column;
-justify-content:space-between;
-color:white;
-font-size:14px;
-}
-
-.safe{color:#22c55e;}
-.warning{color:#eab308;}
-.danger{color:#ef4444;}
-
 </style>
 </head>
 
 <body>
 
-<h1>HỆ THỐNG CẢNH BÁO NGẬP LỤT</h1>
-
-<div class="dashboard">
-
-<div class="card">
-<h2>Mực nước (mô phỏng)</h2>
-<div class="gauge">
-<div class="water" id="waterLevel" style="height:10%;"></div>
-</div>
+<div class="header">
+  <h1>🌊 FLOOD MONITORING SYSTEM</h1>
+  <h3 id="ipDisplay">Connecting...</h3>
 </div>
 
-<div class="card">
-<h2>Trạng thái</h2>
-<div class="value" id="value">--</div>
-<div class="status" id="status">Đang kết nối...</div>
+<div class="grid">
+
+  <div class="card">
+    <h2>River Level</h2>
+    <div id="riverBox">
+      <div id="water"></div>
+
+      <div class="scale" style="bottom:0%">0cm</div>
+      <div class="scale" style="bottom:16%">1cm</div>
+      <div class="scale" style="bottom:33%">2cm</div>
+      <div class="scale" style="bottom:50%">3cm</div>
+      <div class="scale" style="bottom:66%">4cm</div>
+      <div class="scale" style="bottom:83%">5cm</div>
+      <div class="scale" style="bottom:100%">6cm</div>
+    </div>
+    <div class="valueBig" id="waterValue">0 cm</div>
+  </div>
+
+  <div class="card">
+    <h2>Status</h2>
+    <div id="statusBox" class="status safe">AN TOAN</div>
+    <h3>ADC: <span id="adcValue">0</span></h3>
+  </div>
+
 </div>
 
-<div class="card">
-<h2>Biểu đồ dữ liệu thời gian thực</h2>
 <canvas id="chart"></canvas>
-</div>
-
-</div>
-
-<!-- DÒNG SÔNG -->
-<div class="river-container">
-<div class="river-scale">
-<div>2m</div>
-<div>1.5m</div>
-<div>1m</div>
-<div>0.5m</div>
-<div>0m</div>
-</div>
-</div>
 
 <script>
+const ESP_IP = "http://192.168.1.159/data";
+document.getElementById("ipDisplay").innerText = ESP_IP;
 
-const token="aDr0xW5cnhpazhuPPuIDUQWZGmtRtAhY";
+let ctx = document.getElementById('chart').getContext('2d');
 
-let dataLog=[];
-let labels=[];
-
-const ctx=document.getElementById('chart').getContext('2d');
-const chart=new Chart(ctx,{
-type:'line',
-data:{
-labels:labels,
-datasets:[{
-label:'Mực nước',
-data:dataLog,
-borderColor:'#22d3ee',
-backgroundColor:'rgba(34,211,238,0.1)',
-tension:0.4
-}]
-},
-options:{
-responsive:true,
-animation:false,
-scales:{ y:{ beginAtZero:true } }
-}
+let chart = new Chart(ctx,{
+    type:'line',
+    data:{
+        labels:[],
+        datasets:[{
+            label:'Water Level (cm)',
+            data:[],
+            borderColor:'#3b82f6',
+            borderWidth:3,
+            fill:false,
+            tension:0.3
+        }]
+    },
+    options:{
+        responsive:true,
+        scales:{
+            y:{ min:0, max:6 }
+        }
+    }
 });
 
-function fetchData(){
+function updateData(){
 
-fetch(`https://blynk.cloud/external/api/get?token=${token}&V0`)
-.then(res=>res.text())
-.then(val=>{
-if(val.includes("error")){
-document.getElementById("status").innerText="Lỗi token";
-return;
+  fetch(ESP_IP)
+  .then(res=>res.json())
+  .then(data=>{
+
+    let water = parseFloat(data.water_cm);
+    let adc = data.adc;
+    let status = data.status;
+
+    document.getElementById("waterValue").innerText = water + " cm";
+    document.getElementById("adcValue").innerText = adc;
+
+    let percent = (water/6)*100;
+    document.getElementById("water").style.height = percent + "%";
+
+    let box = document.getElementById("statusBox");
+    box.innerText = status;
+    box.classList.remove("safe","warning","danger");
+
+    if(status==="AN TOAN") box.classList.add("safe");
+    if(status==="CANH BAO") box.classList.add("warning");
+    if(status==="RAT NGUY HIEM") box.classList.add("danger");
+
+    let time = new Date().toLocaleTimeString();
+
+    chart.data.labels.push(time);
+    chart.data.datasets[0].data.push(water);
+
+    if(chart.data.labels.length>20){
+      chart.data.labels.shift();
+      chart.data.datasets[0].data.shift();
+    }
+
+    chart.update();
+  })
+  .catch(()=>{
+    document.getElementById("statusBox").innerText="MAT KET NOI";
+  });
 }
 
-val=parseInt(val);
-document.getElementById("value").innerText=val;
-
-dataLog.push(val);
-labels.push(new Date().toLocaleTimeString());
-
-if(dataLog.length>50){
-dataLog.shift();
-labels.shift();
-}
-
-chart.update();
-});
-
-fetch(`https://blynk.cloud/external/api/get?token=${token}&V1`)
-.then(res=>res.text())
-.then(status=>{
-
-let statusDiv=document.getElementById("status");
-statusDiv.innerText=status;
-statusDiv.className="status";
-
-let water=document.getElementById("waterLevel");
-
-/* GAUGE THEO NGƯỠNG */
-if(status.includes("AN TOÀN")){
-statusDiv.classList.add("safe");
-water.style.height="20%";
-water.style.background="#22c55e";
-}
-
-else if(status.includes("NGUY HIỂM") && !status.includes("RẤT")){
-statusDiv.classList.add("warning");
-water.style.height="50%";
-water.style.background="#eab308";
-}
-
-else if(status.includes("RẤT")){
-statusDiv.classList.add("danger");
-water.style.height="85%";
-water.style.background="#ef4444";
-}
-
-});
-}
-
-setInterval(fetchData,1000);
-fetchData();
-
+setInterval(updateData,1000);
+updateData();
 </script>
 
 </body>
