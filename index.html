@@ -1,270 +1,75 @@
 <!DOCTYPE html>
-<html lang="vi">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flood Environmental Monitoring Station</title>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<title>Flood Monitoring</title>
 
 <style>
-body{
-    margin:0;
-    font-family: 'Segoe UI', sans-serif;
-    background: linear-gradient(to bottom,#0f172a,#1e293b);
-    color:white;
+body {
+  font-family: Arial;
+  text-align: center;
+  background: #111;
+  color: white;
 }
 
-header{
-    padding:20px;
-    text-align:center;
-    font-size:24px;
-    font-weight:bold;
-    background:#0f172a;
-    border-bottom:1px solid #334155;
+.status {
+  font-size: 30px;
+  margin-top: 20px;
 }
 
-.container{
-    display:grid;
-    grid-template-columns: 1fr 2fr 1fr;
-    gap:20px;
-    padding:20px;
+.value {
+  font-size: 40px;
+  margin-top: 10px;
 }
 
-.card{
-    background:#1e293b;
-    padding:20px;
-    border-radius:12px;
-    box-shadow:0 0 10px rgba(0,0,0,0.3);
-}
+.safe { color: #00ff00; }
+.warning { color: #ffff00; }
+.danger { color: #ff0000; }
 
-.big-number{
-    font-size:42px;
-    font-weight:bold;
-}
-
-.status{
-    padding:8px 12px;
-    border-radius:8px;
-    display:inline-block;
-    font-weight:bold;
-}
-
-.safe{ background:#22c55e; }
-.warning{ background:#facc15; color:black; }
-.danger{ background:#ef4444; }
-
-canvas{
-    background:#0f172a;
-    border-radius:12px;
-}
-
-/* RIVER */
-.river-box{
-    position:relative;
-    height:300px;
-    background:linear-gradient(to bottom,#0ea5e9,#0369a1);
-    border-radius:12px;
-    overflow:hidden;
-}
-
-.water{
-    position:absolute;
-    bottom:0;
-    width:100%;
-    background:#38bdf8;
-    transition:height 1s ease;
-}
-
-/* SCALE FIXED: tăng dần từ dưới lên */
-.scale{
-    position:absolute;
-    right:8px;
-    top:0;
-    height:100%;
-    display:flex;
-    flex-direction:column;
-    justify-content:space-between;
-    font-size:12px;
-    font-weight:bold;
-}
-
-.log{
-    max-height:150px;
-    overflow:auto;
-    font-size:13px;
-}
 </style>
 </head>
 
 <body>
 
-<header>
-🌿 Flood Environmental Monitoring Station
-<br>
-<span id="connectionStatus">Đang kết nối...</span>
-</header>
+<h1>HỆ THỐNG CẢNH BÁO LŨ</h1>
 
-<div class="container">
-
-<!-- LEFT PANEL -->
-<div class="card">
-    <h3>Thông số</h3>
-    <div>ADC</div>
-    <div class="big-number" id="adcValue">--</div>
-    <div>Mực nước (cm)</div>
-    <div class="big-number" id="cmValue">--</div>
-    <br>
-    <div>Trạng thái</div>
-    <div id="statusBox" class="status safe">---</div>
-</div>
-
-<!-- CHART -->
-<div class="card">
-    <h3>Biểu đồ Realtime</h3>
-    <canvas id="chart"></canvas>
-</div>
-
-<!-- RIVER -->
-<div class="card">
-    <h3>Mô phỏng mực nước</h3>
-    <div class="river-box">
-        <div class="water" id="waterLevel" style="height:20%"></div>
-
-        <!-- SCALE CHUẨN: 0 dưới, 6 trên -->
-        <div class="scale">
-            <span>6 cm</span>
-            <span>5 cm</span>
-            <span>4 cm</span>
-            <span>3 cm</span>
-            <span>2 cm</span>
-            <span>1 cm</span>
-            <span>0 cm</span>
-        </div>
-    </div>
-</div>
-
-</div>
-
-<div class="card" style="margin:20px">
-    <h3>Log trạng thái</h3>
-    <div class="log" id="logBox"></div>
-</div>
+<div class="value" id="value">--</div>
+<div class="status" id="status">--</div>
 
 <script>
-const TOKEN = "aDr0xW5cnhpazhuPPuIDUQWZGmtRtAhY";
 
-// Proxy tránh CORS khi chạy GitHub Pages
-function getBlynkValue(pin){
-    const url = `https://blynk.cloud/external/api/get?token=${TOKEN}&${pin}`;
-    const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-    return fetch(proxy).then(res=>res.text());
-}
+const token = "YOUR_AUTH_TOKEN";
 
-const adcDisplay = document.getElementById("adcValue");
-const cmDisplay = document.getElementById("cmValue");
-const statusBox = document.getElementById("statusBox");
-const water = document.getElementById("waterLevel");
-const logBox = document.getElementById("logBox");
-const connectionStatus = document.getElementById("connectionStatus");
+function fetchData() {
 
-let lastStatus = "";
+  fetch(`https://blynk.cloud/external/api/get?token=${token}&V0`)
+    .then(res => res.text())
+    .then(data => {
+      document.getElementById("value").innerText = "Mực nước: " + data;
+    });
 
-/* ===== CHART ===== */
-const ctx = document.getElementById("chart").getContext("2d");
-const chart = new Chart(ctx,{
-    type:"line",
-    data:{
-        labels:[],
-        datasets:[{
-            label:"ADC",
-            data:[],
-            tension:0.4
-        }]
-    },
-    options:{
-        responsive:true,
-        scales:{
-            y:{ beginAtZero:true }
-        }
-    }
-});
+  fetch(`https://blynk.cloud/external/api/get?token=${token}&V1`)
+    .then(res => res.text())
+    .then(status => {
 
-/* ===== FUNCTIONS ===== */
+      const statusDiv = document.getElementById("status");
+      statusDiv.innerText = status;
 
-function addLog(text){
-    const time = new Date().toLocaleTimeString();
-    logBox.innerHTML = `[${time}] ${text}<br>` + logBox.innerHTML;
-}
+      statusDiv.className = "status";
 
-function updateStatus(adc){
-    let status="";
-    let className="";
+      if (status.includes("AN TOAN"))
+        statusDiv.classList.add("safe");
 
-    if(adc < 1000){
-        status="An toàn";
-        className="safe";
-    }
-    else if(adc < 1600){
-        status="Nguy hiểm";
-        className="warning";
-    }
-    else{
-        status="Rất nguy hiểm";
-        className="danger";
-    }
+      else if (status.includes("NGUY HIEM") && !status.includes("RAT"))
+        statusDiv.classList.add("warning");
 
-    statusBox.textContent=status;
-    statusBox.className="status "+className;
-
-    if(status !== lastStatus){
-        addLog("Chuyển sang: " + status);
-        lastStatus = status;
-    }
-}
-
-function updateChart(adc){
-    if(chart.data.labels.length > 30){
-        chart.data.labels.shift();
-        chart.data.datasets[0].data.shift();
-    }
-
-    chart.data.labels.push("");
-    chart.data.datasets[0].data.push(adc);
-    chart.update();
-}
-
-function updateWater(adc){
-    let percent = 20 + (adc/2000)*40;
-    let cm = (percent/100)*6;
-
-    water.style.height = percent + "%";
-
-    adcDisplay.textContent = adc;
-    cmDisplay.textContent = cm.toFixed(2);
-}
-
-function fetchData(){
-    Promise.all([
-        getBlynkValue("V0"),
-        getBlynkValue("V1")
-    ])
-    .then(([adcRaw,statusString])=>{
-        connectionStatus.textContent="Đã kết nối";
-
-        const adc = parseInt(adcRaw);
-
-        updateWater(adc);
-        updateStatus(adc);
-        updateChart(adc);
-    })
-    .catch(()=>{
-        connectionStatus.textContent="Mất kết nối";
+      else if (status.includes("RAT"))
+        statusDiv.classList.add("danger");
     });
 }
 
-/* Auto cập nhật 2 giây */
-setInterval(fetchData,2000);
+setInterval(fetchData, 1000);
+
 fetchData();
 
 </script>
