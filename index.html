@@ -1,208 +1,83 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Hệ thống cảnh báo ngập lụt</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8">
+  <title>Hệ Thống Cảnh Báo Ngập Lụt</title>
+  <style>
+    body {
+      font-family: Arial;
+      text-align: center;
+      background: #f4f4f4;
+      padding-top: 50px;
+    }
 
-<style>
-body{
-  margin:0;
-  font-family:Segoe UI;
-  background:#0f172a;
-  color:white;
-  text-align:center;
-}
-.header{
-  padding:20px;
-  background:#1e293b;
-  font-size:28px;
-  font-weight:bold;
-}
-.grid{
-  display:flex;
-  justify-content:center;
-  gap:40px;
-  margin-top:30px;
-  flex-wrap:wrap;
-}
-.card{
-  background:#1e293b;
-  padding:20px;
-  border-radius:15px;
-  width:260px;
-}
-#riverBox{
-  width:150px;
-  height:350px;
-  border:3px solid white;
-  margin:auto;
-  position:relative;
-}
-#water{
-  position:absolute;
-  bottom:0;
-  width:100%;
-  background:linear-gradient(to top,#2563eb,#60a5fa);
-  height:0%;
-  transition:0.5s;
-}
-.status{
-  font-size:22px;
-  padding:12px;
-  border-radius:10px;
-  font-weight:bold;
-}
-.safe{background:#16a34a;}
-.warning{background:#facc15;color:black;}
-.danger{background:#dc2626;animation:blink 1s infinite;}
-@keyframes blink{
-  50%{opacity:0.5;}
-}
-.valueBig{
-  font-size:32px;
-  margin:10px 0;
-}
-canvas{
-  max-width:900px;
-  margin-top:40px;
-}
-</style>
+    .box {
+      background: white;
+      padding: 30px;
+      margin: auto;
+      width: 300px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      color: #0077cc;
+    }
+
+    #value {
+      font-size: 40px;
+      margin: 20px 0;
+      font-weight: bold;
+    }
+
+    .status {
+      font-size: 20px;
+      font-weight: bold;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="header">
-🌊 HỆ THỐNG CẢNH BÁO NGẬP LỤT
+<div class="box">
+  <h1>Mực nước hiện tại</h1>
+  <div id="value">--</div>
+  <div class="status" id="status">Đang tải...</div>
 </div>
-
-<div class="grid">
-
-<div class="card">
-<h2>Mực nước</h2>
-<div id="riverBox">
-<div id="water"></div>
-</div>
-<div class="valueBig" id="waterValue">-- cm</div>
-</div>
-
-<div class="card">
-<h2>Trạng thái</h2>
-<div id="statusBox" class="status safe">ĐANG TẢI...</div>
-<h3>Giá trị ADC: <span id="adcValue">--</span></h3>
-</div>
-
-</div>
-
-<canvas id="chart"></canvas>
 
 <script>
+const token = "DÁN_TOKEN_CỦA_BẠN_VÀO_ĐÂY";
+const pin = "V2";
 
-const TOKEN = "aDr0xW5cnhpazhuPPuIDUQWZGmtRtAhY";
+async function updateData() {
+  try {
+    const response = await fetch(`https://blynk.cloud/external/api/get?token=${token}&${pin}`);
+    const data = await response.text();
 
-// ===== BIỂU ĐỒ =====
-let ctx = document.getElementById('chart').getContext('2d');
+    document.getElementById("value").innerText = data;
 
-let chart = new Chart(ctx,{
-  type:'line',
-  data:{
-    labels:[],
-    datasets:[{
-      label:'Mực nước (cm)',
-      data:[],
-      borderColor:'#3b82f6',
-      borderWidth:3,
-      fill:false,
-      tension:0.3
-    }]
-  },
-  options:{
-    responsive:true,
-    scales:{
-      y:{min:2,max:6}
-    }
-  }
-});
+    const status = document.getElementById("status");
 
-// ===== HÀM LẤY DỮ LIỆU =====
-async function getPin(pin){
-  const res = await fetch(
-    `https://blynk.cloud/external/api/get?token=${TOKEN}&${pin}`
-  );
-
-  if(!res.ok){
-    throw new Error("HTTP Error");
-  }
-
-  const data = await res.json();
-
-  if(!data || data.length === 0){
-    return null;
-  }
-
-  return Number(data[0]);
-}
-
-// ===== UPDATE =====
-async function updateData(){
-
-  try{
-
-    let adc = await getPin("V0");
-    let cm  = await getPin("V1");
-    let st  = await getPin("V2");
-
-    if(adc === null || cm === null || st === null){
-      throw new Error("No data");
+    if (parseInt(data) < 100) {
+      status.innerText = "An toàn";
+      status.style.color = "green";
+    } 
+    else if (parseInt(data) < 300) {
+      status.innerText = "Cảnh báo";
+      status.style.color = "orange";
+    } 
+    else {
+      status.innerText = "Nguy hiểm!";
+      status.style.color = "red";
     }
 
-    document.getElementById("adcValue").innerText = adc;
-    document.getElementById("waterValue").innerText = cm.toFixed(2) + " cm";
-
-    // Mực nước %
-    let percent = ((cm - 2) / 4) * 100;
-    percent = Math.max(0, Math.min(100, percent));
-    document.getElementById("water").style.height = percent + "%";
-
-    let statusBox = document.getElementById("statusBox");
-    statusBox.className = "status";
-
-    if(st === 0){
-      statusBox.innerText = "AN TOÀN";
-      statusBox.classList.add("safe");
-    }
-    else if(st === 1){
-      statusBox.innerText = "CẢNH BÁO";
-      statusBox.classList.add("warning");
-    }
-    else if(st === 2){
-      statusBox.innerText = "RẤT NGUY HIỂM";
-      statusBox.classList.add("danger");
-    }
-
-    let time = new Date().toLocaleTimeString();
-    chart.data.labels.push(time);
-    chart.data.datasets[0].data.push(cm);
-
-    if(chart.data.labels.length > 20){
-      chart.data.labels.shift();
-      chart.data.datasets[0].data.shift();
-    }
-
-    chart.update();
-
-  }catch(error){
-
-    document.getElementById("statusBox").innerText = "MẤT KẾT NỐI";
-    document.getElementById("statusBox").className = "status danger";
-
-    console.log("Lỗi:", error);
+  } catch (error) {
+    console.error("Lỗi:", error);
   }
 }
 
-setInterval(updateData,1000);
 updateData();
-
+setInterval(updateData, 3000);
 </script>
 
 </body>
