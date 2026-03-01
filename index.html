@@ -13,14 +13,12 @@ body{
   color:white;
   text-align:center;
 }
-
 .header{
   padding:20px;
   background:#1e293b;
   font-size:28px;
   font-weight:bold;
 }
-
 .grid{
   display:flex;
   justify-content:center;
@@ -28,14 +26,12 @@ body{
   margin-top:30px;
   flex-wrap:wrap;
 }
-
 .card{
   background:#1e293b;
   padding:20px;
   border-radius:15px;
   width:260px;
 }
-
 #riverBox{
   width:150px;
   height:350px;
@@ -43,7 +39,6 @@ body{
   margin:auto;
   position:relative;
 }
-
 #water{
   position:absolute;
   bottom:0;
@@ -52,27 +47,22 @@ body{
   height:0%;
   transition:0.5s;
 }
-
 .status{
   font-size:22px;
   padding:12px;
   border-radius:10px;
   font-weight:bold;
 }
-
 .safe{background:#16a34a;}
 .warning{background:#facc15;color:black;}
 .danger{background:#dc2626;animation:blink 1s infinite;}
-
 @keyframes blink{
   50%{opacity:0.5;}
 }
-
 .valueBig{
   font-size:32px;
   margin:10px 0;
 }
-
 canvas{
   max-width:900px;
   margin-top:40px;
@@ -93,13 +83,13 @@ canvas{
 <div id="riverBox">
 <div id="water"></div>
 </div>
-<div class="valueBig" id="waterValue">0 cm</div>
+<div class="valueBig" id="waterValue">-- cm</div>
 </div>
 
 <div class="card">
 <h2>Trạng thái</h2>
-<div id="statusBox" class="status safe">AN TOÀN</div>
-<h3>Giá trị ADC: <span id="adcValue">0</span></h3>
+<div id="statusBox" class="status safe">ĐANG TẢI...</div>
+<h3>Giá trị ADC: <span id="adcValue">--</span></h3>
 </div>
 
 </div>
@@ -134,37 +124,42 @@ let chart = new Chart(ctx,{
   }
 });
 
-// ===== HÀM CHUYỂN DATA BLYNK =====
-function cleanValue(value){
-  try{
-    let parsed = JSON.parse(value);
-    return parsed[0];
-  }catch{
-    return value;
+// ===== HÀM LẤY DỮ LIỆU =====
+async function getPin(pin){
+  const res = await fetch(
+    `https://blynk.cloud/external/api/get?token=${TOKEN}&${pin}`
+  );
+
+  if(!res.ok){
+    throw new Error("HTTP Error");
   }
+
+  const data = await res.json();
+
+  if(!data || data.length === 0){
+    return null;
+  }
+
+  return Number(data[0]);
 }
 
-// ===== FETCH =====
+// ===== UPDATE =====
 async function updateData(){
 
   try{
 
-    let adcRes = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V0`);
-    let cmRes  = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V1`);
-    let stRes  = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V2`);
+    let adc = await getPin("V0");
+    let cm  = await getPin("V1");
+    let st  = await getPin("V2");
 
-    let adc = cleanValue(await adcRes.text());
-    let cm  = cleanValue(await cmRes.text());
-    let st  = cleanValue(await stRes.text());
-
-    adc = parseInt(adc);
-    cm  = parseFloat(cm);
-    st  = parseInt(st);
+    if(adc === null || cm === null || st === null){
+      throw new Error("No data");
+    }
 
     document.getElementById("adcValue").innerText = adc;
     document.getElementById("waterValue").innerText = cm.toFixed(2) + " cm";
 
-    // Tính % nước
+    // Mực nước %
     let percent = ((cm - 2) / 4) * 100;
     percent = Math.max(0, Math.min(100, percent));
     document.getElementById("water").style.height = percent + "%";
@@ -180,13 +175,12 @@ async function updateData(){
       statusBox.innerText = "CẢNH BÁO";
       statusBox.classList.add("warning");
     }
-    else{
+    else if(st === 2){
       statusBox.innerText = "RẤT NGUY HIỂM";
       statusBox.classList.add("danger");
     }
 
     let time = new Date().toLocaleTimeString();
-
     chart.data.labels.push(time);
     chart.data.datasets[0].data.push(cm);
 
@@ -198,7 +192,11 @@ async function updateData(){
     chart.update();
 
   }catch(error){
-    console.log("Lỗi kết nối Blynk:", error);
+
+    document.getElementById("statusBox").innerText = "MẤT KẾT NỐI";
+    document.getElementById("statusBox").className = "status danger";
+
+    console.log("Lỗi:", error);
   }
 }
 
@@ -209,4 +207,3 @@ updateData();
 
 </body>
 </html>
-
