@@ -2,137 +2,135 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Flood Monitoring Control Center</title>
-
+<title>Hệ Thống Cảnh Báo Ngập Lụt</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
-body {
-  margin:0;
-  font-family: 'Segoe UI', sans-serif;
-  background: #0b1220;
-  color: #e2e8f0;
+body{
+margin:0;
+font-family:'Segoe UI',sans-serif;
+background:#0b1220;
+color:#e2e8f0;
 }
 
-h1 {
-  text-align:center;
-  padding:20px;
-  font-size:32px;
-  letter-spacing:2px;
+h1{
+text-align:center;
+padding:20px;
+font-size:32px;
+letter-spacing:2px;
 }
 
-.dashboard {
-  display:grid;
-  grid-template-columns: repeat(auto-fit,minmax(320px,1fr));
-  gap:20px;
-  padding:20px;
+.dashboard{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(320px,1fr));
+gap:20px;
+padding:20px;
 }
 
-.card {
-  background:#111827;
-  border-radius:15px;
-  padding:20px;
-  box-shadow:0 0 15px rgba(0,255,200,0.05);
+.card{
+background:#111827;
+border-radius:15px;
+padding:20px;
+box-shadow:0 0 15px rgba(0,255,200,0.05);
 }
 
-.value {
-  font-size:48px;
-  font-weight:bold;
+.value{
+font-size:48px;
+font-weight:bold;
 }
 
-.status {
-  font-size:22px;
-  margin-top:10px;
+.status{
+font-size:22px;
+margin-top:10px;
 }
 
-.trend {
-  margin-top:10px;
-  font-size:18px;
+/* GAUGE */
+.gauge{
+position:relative;
+width:220px;
+height:220px;
+border-radius:50%;
+border:6px solid #334155;
+margin:auto;
+overflow:hidden;
 }
 
-/* Liquid Gauge */
-.liquid {
-  position:relative;
-  width:200px;
-  height:200px;
-  border-radius:50%;
-  overflow:hidden;
-  border:6px solid #334155;
-  margin:auto;
+.water{
+position:absolute;
+bottom:0;
+width:100%;
+background:#22d3ee;
+transition:height 0.8s ease;
 }
 
-.wave {
-  position:absolute;
-  width:200%;
-  height:200%;
-  background:rgba(0,255,200,0.6);
-  top:100%;
-  left:-50%;
-  border-radius:40%;
-  animation:wave 5s linear infinite;
+/* DÒNG SÔNG */
+.river-container{
+position:fixed;
+bottom:0;
+width:100%;
+height:200px;
+background:linear-gradient(to top,#0ea5e9,#0284c7);
 }
 
-@keyframes wave {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.river-scale{
+position:absolute;
+left:20px;
+bottom:0;
+height:100%;
+display:flex;
+flex-direction:column;
+justify-content:space-between;
+color:white;
+font-size:14px;
 }
 
-/* River bottom */
-.river {
-  position:fixed;
-  bottom:0;
-  width:200%;
-  height:120px;
-  background:linear-gradient(90deg,#0ea5e9,#0284c7,#0ea5e9);
-  opacity:0.2;
-  animation:flow 6s linear infinite;
-}
-
-@keyframes flow {
-  from { transform:translateX(0); }
-  to { transform:translateX(-50%); }
-}
-
-.safe { color:#22c55e; }
-.warning { color:#eab308; }
-.danger { color:#ef4444; }
+.safe{color:#22c55e;}
+.warning{color:#eab308;}
+.danger{color:#ef4444;}
 
 </style>
 </head>
 
 <body>
 
-<h1>FLOOD MONITORING CONTROL CENTER</h1>
+<h1>HỆ THỐNG CẢNH BÁO NGẬP LỤT</h1>
 
 <div class="dashboard">
 
 <div class="card">
-<h2>Liquid Water Level</h2>
-<div class="liquid">
-  <div class="wave" id="wave"></div>
+<h2>Mực nước (mô phỏng)</h2>
+<div class="gauge">
+<div class="water" id="waterLevel" style="height:10%;"></div>
 </div>
 </div>
 
 <div class="card">
-<h2>Current Value</h2>
+<h2>Trạng thái</h2>
 <div class="value" id="value">--</div>
-<div class="status" id="status">Connecting...</div>
-<div class="trend" id="trend"></div>
+<div class="status" id="status">Đang kết nối...</div>
 </div>
 
 <div class="card">
-<h2>Realtime Data Analysis</h2>
+<h2>Biểu đồ dữ liệu thời gian thực</h2>
 <canvas id="chart"></canvas>
 </div>
 
 </div>
 
-<div class="river"></div>
+<!-- DÒNG SÔNG -->
+<div class="river-container">
+<div class="river-scale">
+<div>2m</div>
+<div>1.5m</div>
+<div>1m</div>
+<div>0.5m</div>
+<div>0m</div>
+</div>
+</div>
 
 <script>
 
 const token="aDr0xW5cnhpazhuPPuIDUQWZGmtRtAhY";
-const maxWater=2500;
 
 let dataLog=[];
 let labels=[];
@@ -143,7 +141,7 @@ type:'line',
 data:{
 labels:labels,
 datasets:[{
-label:'Water Level',
+label:'Mực nước',
 data:dataLog,
 borderColor:'#22d3ee',
 backgroundColor:'rgba(34,211,238,0.1)',
@@ -157,53 +155,59 @@ scales:{ y:{ beginAtZero:true } }
 }
 });
 
-function updateTrend(){
-if(dataLog.length<6) return;
-let recent=dataLog.slice(-5);
-let diff=recent[4]-recent[0];
-let trendText="ỔN ĐỊNH →";
-if(diff>50) trendText="ĐANG TĂNG ↑";
-if(diff<-50) trendText="ĐANG GIẢM ↓";
-document.getElementById("trend").innerText=trendText;
-}
-
 function fetchData(){
 
 fetch(`https://blynk.cloud/external/api/get?token=${token}&V0`)
 .then(res=>res.text())
 .then(val=>{
 if(val.includes("error")){
-document.getElementById("status").innerText="Token Error";
+document.getElementById("status").innerText="Lỗi token";
 return;
 }
+
 val=parseInt(val);
 document.getElementById("value").innerText=val;
-
-let percent=Math.min(val/maxWater,1);
-document.getElementById("wave").style.top=(100-percent*100)+"%";
 
 dataLog.push(val);
 labels.push(new Date().toLocaleTimeString());
 
-if(dataLog.length>100){
+if(dataLog.length>50){
 dataLog.shift();
 labels.shift();
 }
 
 chart.update();
-updateTrend();
 });
 
 fetch(`https://blynk.cloud/external/api/get?token=${token}&V1`)
 .then(res=>res.text())
 .then(status=>{
+
 let statusDiv=document.getElementById("status");
 statusDiv.innerText=status;
 statusDiv.className="status";
 
-if(status.includes("AN TOAN")) statusDiv.classList.add("safe");
-else if(status.includes("NGUY HIEM") && !status.includes("RAT")) statusDiv.classList.add("warning");
-else if(status.includes("RAT")) statusDiv.classList.add("danger");
+let water=document.getElementById("waterLevel");
+
+/* GAUGE THEO NGƯỠNG */
+if(status.includes("AN TOÀN")){
+statusDiv.classList.add("safe");
+water.style.height="20%";
+water.style.background="#22c55e";
+}
+
+else if(status.includes("NGUY HIỂM") && !status.includes("RẤT")){
+statusDiv.classList.add("warning");
+water.style.height="50%";
+water.style.background="#eab308";
+}
+
+else if(status.includes("RẤT")){
+statusDiv.classList.add("danger");
+water.style.height="85%";
+water.style.background="#ef4444";
+}
+
 });
 }
 
