@@ -2,39 +2,75 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Flood Monitoring</title>
+<title>Hệ Thống Cảnh Báo Lũ</title>
 
 <style>
 body {
   font-family: Arial;
   text-align: center;
-  background: #111;
+  background: #0f172a;
   color: white;
+  transition: background 0.5s;
+}
+
+h1 {
+  margin-top: 30px;
+  font-size: 40px;
+}
+
+.value {
+  font-size: 60px;
+  margin-top: 20px;
 }
 
 .status {
   font-size: 30px;
-  margin-top: 20px;
-}
-
-.value {
-  font-size: 40px;
   margin-top: 10px;
+  font-weight: bold;
 }
 
-.safe { color: #00ff00; }
-.warning { color: #ffff00; }
-.danger { color: #ff0000; }
+.bar-container {
+  width: 80%;
+  height: 30px;
+  background: #1e293b;
+  margin: 30px auto;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.bar {
+  height: 100%;
+  width: 0%;
+  transition: width 0.5s;
+}
+
+.safe-bg { background: #064e3b; }
+.warning-bg { background: #78350f; }
+.danger-bg { background: #7f1d1d; }
+
+.safe { color: #00ff88; }
+.warning { color: #ffd000; }
+.danger { color: #ff3b3b; animation: blink 1s infinite; }
+
+@keyframes blink {
+  0% { opacity: 1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 1; }
+}
 
 </style>
 </head>
 
 <body>
 
-<h1>HỆ THỐNG CẢNH BÁO NGẬP LỤT</h1>
+<h1>HỆ THỐNG CẢNH BÁO LŨ</h1>
 
 <div class="value" id="value">--</div>
-<div class="status" id="status">--</div>
+<div class="status" id="status">Đang kết nối...</div>
+
+<div class="bar-container">
+  <div class="bar" id="waterBar"></div>
+</div>
 
 <script>
 
@@ -43,9 +79,20 @@ const token = "aDr0xW5cnhpazhuPPuIDUQWZGmtRtAhY";
 function fetchData() {
 
   fetch(`https://blynk.cloud/external/api/get?token=${token}&V0`)
-    .then(res => res.text())
+    .then(res => res.json())
     .then(data => {
-      document.getElementById("value").innerText = "Mực nước: " + data;
+
+      if (data.error) {
+        document.getElementById("status").innerText = "Token sai!";
+        return;
+      }
+
+      let value = parseInt(data);
+
+      document.getElementById("value").innerText = value;
+
+      let percent = Math.min((value / 2500) * 100, 100);
+      document.getElementById("waterBar").style.width = percent + "%";
     });
 
   fetch(`https://blynk.cloud/external/api/get?token=${token}&V1`)
@@ -53,28 +100,40 @@ function fetchData() {
     .then(status => {
 
       const statusDiv = document.getElementById("status");
+      const body = document.body;
+      const bar = document.getElementById("waterBar");
+
       statusDiv.innerText = status;
-
       statusDiv.className = "status";
+      body.className = "";
+      bar.style.background = "";
 
-      if (status.includes("AN TOAN"))
+      if (status.includes("AN TOAN")) {
         statusDiv.classList.add("safe");
+        body.classList.add("safe-bg");
+        bar.style.background = "#00ff88";
+      }
 
-      else if (status.includes("NGUY HIEM") && !status.includes("RAT"))
+      else if (status.includes("NGUY HIEM") && !status.includes("RAT")) {
         statusDiv.classList.add("warning");
+        body.classList.add("warning-bg");
+        bar.style.background = "#ffd000";
+      }
 
-      else if (status.includes("RAT"))
+      else if (status.includes("RAT")) {
         statusDiv.classList.add("danger");
+        body.classList.add("danger-bg");
+        bar.style.background = "#ff3b3b";
+      }
+
     });
+
 }
 
 setInterval(fetchData, 1000);
-
 fetchData();
 
 </script>
 
 </body>
 </html>
-
-
