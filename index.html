@@ -17,7 +17,6 @@ body{
 .header{
   padding:20px;
   background:#1e293b;
-  box-shadow:0 0 20px black;
 }
 
 .grid{
@@ -32,7 +31,6 @@ body{
   background:#1e293b;
   padding:20px;
   border-radius:15px;
-  box-shadow:0 0 20px rgba(0,0,0,0.5);
 }
 
 #riverBox{
@@ -51,13 +49,6 @@ body{
   transition:0.5s;
 }
 
-.scale{
-  position:absolute;
-  left:-30px;
-  color:white;
-  font-size:12px;
-}
-
 .status{
   font-size:26px;
   padding:15px;
@@ -65,12 +56,12 @@ body{
   font-weight:bold;
 }
 
-.safe{ background:#16a34a; box-shadow:0 0 20px #16a34a;}
-.warning{ background:#facc15; color:black; box-shadow:0 0 20px #facc15;}
-.danger{ background:#dc2626; animation:blink 1s infinite; box-shadow:0 0 20px red;}
+.safe{background:#16a34a;}
+.warning{background:#facc15;color:black;}
+.danger{background:#dc2626;animation:blink 1s infinite;}
 
 @keyframes blink{
-  50%{ opacity:0.5;}
+  50%{opacity:0.5;}
 }
 
 .valueBig{
@@ -88,108 +79,116 @@ canvas{
 <body>
 
 <div class="header">
-  <h1>🌊 FLOOD MONITORING SYSTEM</h1>
-  <h3 id="ipDisplay">Connecting...</h3>
+<h1>🌊 FLOOD MONITORING SYSTEM</h1>
 </div>
 
 <div class="grid">
 
-  <div class="card">
-    <h2>River Level</h2>
-    <div id="riverBox">
-      <div id="water"></div>
+<div class="card">
+<h2>River Level</h2>
+<div id="riverBox">
+<div id="water"></div>
+</div>
+<div class="valueBig" id="waterValue">0 cm</div>
+</div>
 
-      <div class="scale" style="bottom:0%">0cm</div>
-      <div class="scale" style="bottom:16%">1cm</div>
-      <div class="scale" style="bottom:33%">2cm</div>
-      <div class="scale" style="bottom:50%">3cm</div>
-      <div class="scale" style="bottom:66%">4cm</div>
-      <div class="scale" style="bottom:83%">5cm</div>
-      <div class="scale" style="bottom:100%">6cm</div>
-    </div>
-    <div class="valueBig" id="waterValue">0 cm</div>
-  </div>
-
-  <div class="card">
-    <h2>Status</h2>
-    <div id="statusBox" class="status safe">AN TOAN</div>
-    <h3>ADC: <span id="adcValue">0</span></h3>
-  </div>
+<div class="card">
+<h2>Status</h2>
+<div id="statusBox" class="status safe">AN TOAN</div>
+<h3>ADC: <span id="adcValue">0</span></h3>
+</div>
 
 </div>
 
 <canvas id="chart"></canvas>
 
 <script>
-const ESP_IP = "http://192.168.1.159/data";
-document.getElementById("ipDisplay").innerText = ESP_IP;
 
+const TOKEN = "aDr0xW5cnhpazhuPPuIDUQWZGmtRtAhY";
+
+// ==== BIỂU ĐỒ ====
 let ctx = document.getElementById('chart').getContext('2d');
 
 let chart = new Chart(ctx,{
-    type:'line',
-    data:{
-        labels:[],
-        datasets:[{
-            label:'Water Level (cm)',
-            data:[],
-            borderColor:'#3b82f6',
-            borderWidth:3,
-            fill:false,
-            tension:0.3
-        }]
-    },
-    options:{
-        responsive:true,
-        scales:{
-            y:{ min:0, max:6 }
-        }
+  type:'line',
+  data:{
+    labels:[],
+    datasets:[{
+      label:'Water Level (cm)',
+      data:[],
+      borderColor:'#3b82f6',
+      borderWidth:3,
+      fill:false,
+      tension:0.3
+    }]
+  },
+  options:{
+    responsive:true,
+    scales:{
+      y:{min:2,max:6}
     }
+  }
 });
 
-function updateData(){
+// ==== FETCH DATA ====
+async function updateData(){
 
-  fetch(ESP_IP)
-  .then(res=>res.json())
-  .then(data=>{
+  try{
 
-    let water = parseFloat(data.water_cm);
-    let adc = data.adc;
-    let status = data.status;
+    let adcRes = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V0`);
+    let cmRes  = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V1`);
+    let stRes  = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V2`);
 
-    document.getElementById("waterValue").innerText = water + " cm";
+    let adc = await adcRes.text();
+    let cm  = await cmRes.text();
+    let st  = await stRes.text();
+
+    adc = parseInt(adc);
+    cm  = parseFloat(cm);
+    st  = parseInt(st);
+
     document.getElementById("adcValue").innerText = adc;
+    document.getElementById("waterValue").innerText = cm.toFixed(2) + " cm";
 
-    let percent = (water/6)*100;
+    let percent = ((cm - 2) / 4) * 100;
     document.getElementById("water").style.height = percent + "%";
 
-    let box = document.getElementById("statusBox");
-    box.innerText = status;
-    box.classList.remove("safe","warning","danger");
+    let statusBox = document.getElementById("statusBox");
+    statusBox.className = "status";
 
-    if(status==="AN TOAN") box.classList.add("safe");
-    if(status==="CANH BAO") box.classList.add("warning");
-    if(status==="RAT NGUY HIEM") box.classList.add("danger");
+    if(st === 0){
+      statusBox.innerText = "AN TOAN";
+      statusBox.classList.add("safe");
+    }
+    else if(st === 1){
+      statusBox.innerText = "CANH BAO";
+      statusBox.classList.add("warning");
+    }
+    else{
+      statusBox.innerText = "RAT NGUY HIEM";
+      statusBox.classList.add("danger");
+    }
 
     let time = new Date().toLocaleTimeString();
 
     chart.data.labels.push(time);
-    chart.data.datasets[0].data.push(water);
+    chart.data.datasets[0].data.push(cm);
 
-    if(chart.data.labels.length>20){
+    if(chart.data.labels.length > 20){
       chart.data.labels.shift();
       chart.data.datasets[0].data.shift();
     }
 
     chart.update();
-  })
-  .catch(()=>{
-    document.getElementById("statusBox").innerText="MAT KET NOI";
-  });
+
+  }catch(error){
+    console.log("Loi ket noi Blynk:", error);
+  }
 }
 
 setInterval(updateData,1000);
 updateData();
+
 </script>
 
 </body>
