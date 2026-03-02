@@ -143,14 +143,8 @@ async function getBlynk(pin){
     throw new Error("Token không hợp lệ");
   }
 
-  try{
-    let parsed = JSON.parse(text);
-    return parsed[0];
-  }catch{
-    return text;
-  }
+  return text.trim(); // CHỈ TRẢ VỀ TEXT
 }
-
 // ===== FETCH =====
 async function updateData(){
 
@@ -212,4 +206,5 @@ updateData();
 
 </body>
 </html>
+
 
