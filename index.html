@@ -22,11 +22,11 @@ body{
   align-items:center;
   justify-content:center;
   background:#1e293b;
-  font-size:22px;
+  font-size:24px;
   font-weight:bold;
 }
 
-/* MAIN GRID */
+/* MAIN LAYOUT */
 .main{
   display:grid;
   grid-template-columns: 320px 1fr;
@@ -42,12 +42,11 @@ body{
   gap:15px;
 }
 
-/* CARD STYLE */
+/* CARD */
 .card{
   background:#1e293b;
   border-radius:15px;
   padding:15px;
-  box-shadow:0 0 15px rgba(0,0,0,0.3);
   text-align:center;
 }
 
@@ -58,7 +57,7 @@ body{
   border:3px solid #94a3b8;
   margin:10px auto;
   position:relative;
-  border-radius:8px;
+  border-radius:10px;
   overflow:hidden;
 }
 
@@ -74,7 +73,7 @@ body{
 /* TEXT */
 .valueBig{
   font-size:24px;
-  margin-top:10px;
+  margin:10px 0;
 }
 
 /* STATUS */
@@ -83,7 +82,6 @@ body{
   padding:10px;
   border-radius:10px;
   font-weight:bold;
-  margin:10px 0;
 }
 
 .safe{background:#16a34a;}
@@ -94,14 +92,13 @@ body{
   50%{opacity:0.5;}
 }
 
-/* RIGHT PANEL (CHART) */
+/* RIGHT PANEL */
 .right{
   background:#1e293b;
   border-radius:15px;
   padding:15px;
   display:flex;
   flex-direction:column;
-  box-shadow:0 0 15px rgba(0,0,0,0.3);
 }
 
 /* CHART BOX */
@@ -110,16 +107,15 @@ body{
   position:relative;
 }
 
+/* QUAN TRỌNG: để chart hiện */
 .chartBox canvas{
   width:100% !important;
-  height:100% !important; /* 🔥 FIX CHART */
+  height:100% !important;
 }
 
 /* TITLE */
-.card h3, .right h3{
+h2,h3{
   margin:5px 0 10px;
-  font-size:18px;
-  color:#cbd5f5;
 }
 </style>
 </head>
@@ -136,7 +132,7 @@ body{
   <div class="left">
 
     <div class="card">
-      <h3>Mực nước</h3>
+      <h2>Mực nước</h2>
       <div id="riverBox">
         <div id="water"></div>
       </div>
@@ -144,16 +140,16 @@ body{
     </div>
 
     <div class="card">
-      <h3>Trạng thái</h3>
+      <h2>Trạng thái</h2>
       <div id="statusBox" class="status safe">AN TOÀN</div>
-      <p>Giá trị ADC: <span id="adcValue">0</span></p>
+      <h3>Giá trị ADC: <span id="adcValue">0</span></h3>
     </div>
 
   </div>
 
   <!-- RIGHT -->
   <div class="right">
-    <h3>Biểu đồ mực nước (Realtime)</h3>
+    <h2>Biểu đồ</h2>
     <div class="chartBox">
       <canvas id="chart"></canvas>
     </div>
@@ -183,7 +179,6 @@ let chart = new Chart(ctx,{
   },
   options:{
     responsive:true,
-    maintainAspectRatio:false, // 🔥 QUAN TRỌNG
     scales:{
       y:{min:0,max:10}
     }
@@ -205,60 +200,13 @@ async function getBlynk(pin){
   }catch{
     return text;
   }
-  return text.trim();
+  return text.trim(); // CHỈ TRẢ VỀ TEXT
 }
 
 // ===== FETCH =====
 async function updateData(){
 
-  try{
-    let adc = await getBlynk("v0");
-
-    adc = Number(adc);
-
-    let waterLevel = (adc / 4095) * 10;
-
-    document.getElementById("adcValue").innerText = adc;
-    document.getElementById("waterValue").innerText = waterLevel.toFixed(1) + " cm";
-
-    let percent = (waterLevel / 10) * 100;
-    document.getElementById("water").style.height = percent + "%";
-
-    let statusBox = document.getElementById("statusBox");
-
-    if(waterLevel < 3){
-      statusBox.innerText = "AN TOÀN";
-      statusBox.className = "status safe";
-    }
-    else if(waterLevel < 7){
-      statusBox.innerText = "CẢNH BÁO";
-      statusBox.className = "status warning";
-    }
-    else{
-      statusBox.innerText = "NGUY HIỂM";
-      statusBox.className = "status danger";
-    }
-
-    let time = new Date().toLocaleTimeString();
-
-    chart.data.labels.push(time);
-    chart.data.datasets[0].data.push(waterLevel);
-
-    if(chart.data.labels.length > 15){
-      chart.data.labels.shift();
-      chart.data.datasets[0].data.shift();
-    }
-
-    chart.update();
-
-  }catch(err){
-    console.error(err);
-  }
-
-}
-
-// ===== LOOP =====
-setInterval(updateData,2000);
+@@ -213,3 +207,4 @@
 
 </script>
 
