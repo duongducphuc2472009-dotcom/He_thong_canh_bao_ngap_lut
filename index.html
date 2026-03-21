@@ -1,211 +1,211 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<title>Hệ thống cảnh báo ngập lụt</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8">
+  <title>Hệ thống cảnh báo ngập lụt</title>
 
-<style>
-body{
-  margin:0;
-  font-family:Segoe UI;
-  background:#0f172a;
-  color:white;
-  text-align:center;
-}
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-.header{
-  padding:20px;
-  background:#1e293b;
-  font-size:28px;
-  font-weight:bold;
-}
+  <style>
+    body{
+      margin:0;
+      font-family:Segoe UI;
+      background:#0f172a;
+      color:white;
+      text-align:center;
+    }
 
-.grid{
-  display:flex;
-  justify-content:center;
-  gap:40px;
-  margin-top:30px;
-  flex-wrap:wrap;
-}
+    .header{
+      padding:20px;
+      background:#1e293b;
+      font-size:28px;
+      font-weight:bold;
+    }
 
-.card{
-  background:#1e293b;
-  padding:20px;
-  border-radius:15px;
-  width:260px;
-}
+    .grid{
+      display:flex;
+      justify-content:center;
+      gap:40px;
+      margin-top:30px;
+      flex-wrap:wrap;
+    }
 
-#riverBox{
-  width:150px;
-  height:350px;
-  border:3px solid white;
-  margin:auto;
-  position:relative;
-}
+    .card{
+      background:#1e293b;
+      padding:20px;
+      border-radius:15px;
+      width:260px;
+    }
 
-#water{
-  position:absolute;
-  bottom:0;
-  width:100%;
-  background:linear-gradient(to top,#2563eb,#60a5fa);
-  height:0%;
-  transition:0.5s;
-}
+    #riverBox{
+      width:150px;
+      height:350px;
+      border:3px solid white;
+      margin:auto;
+      position:relative;
+    }
 
-.status{
-  font-size:22px;
-  padding:12px;
-  border-radius:10px;
-  font-weight:bold;
-}
+    #water{
+      position:absolute;
+      bottom:0;
+      width:100%;
+      background:linear-gradient(to top,#2563eb,#60a5fa);
+      height:0%;
+      transition:0.5s;
+    }
 
-.safe{background:#16a34a;}
-.warning{background:#facc15;color:black;}
-.danger{background:#dc2626;animation:blink 1s infinite;}
+    .status{
+      font-size:22px;
+      padding:12px;
+      border-radius:10px;
+      font-weight:bold;
+    }
 
-@keyframes blink{
-  50%{opacity:0.5;}
-}
+    .safe{background:#16a34a;}
+    .warning{background:#facc15;color:black;}
+    .danger{background:#dc2626;animation:blink 1s infinite;}
 
-.valueBig{
-  font-size:32px;
-  margin:10px 0;
-}
+    @keyframes blink{
+      50%{opacity:0.5;}
+    }
 
-canvas{
-  max-width:900px;
-  margin-top:40px;
-}
-</style>
+    .valueBig{
+      font-size:32px;
+      margin:10px 0;
+    }
+
+    canvas{
+      max-width:900px;
+      margin-top:40px;
+    }
+  </style>
 </head>
 
 <body>
 
-<div class="header">
-🌊 HỆ THỐNG CẢNH BÁO NGẬP LỤT
-</div>
+  <div class="header">
+    🌊 HỆ THỐNG CẢNH BÁO NGẬP LỤT
+  </div>
 
-<div class="grid">
+  <div class="grid">
 
-<div class="card">
-<h2>Mực nước</h2>
-<div id="riverBox">
-<div id="water"></div>
-</div>
-<div class="valueBig" id="waterValue">0 cm</div>
-</div>
+    <div class="card">
+      <h2>Mực nước</h2>
 
-<div class="card">
-<h2>Trạng thái</h2>
-<div id="statusBox" class="status safe">AN TOÀN</div>
-<h3>Giá trị ADC: <span id="adcValue">0</span></h3>
-</div>
+      <div id="riverBox">
+        <div id="water"></div>
+      </div>
 
-</div>
+      <div class="valueBig" id="waterValue">0 cm</div>
+    </div>
 
-<canvas id="chart"></canvas>
+    <div class="card">
+      <h2>Trạng thái</h2>
+      <div id="statusBox" class="status safe">AN TOÀN</div>
+      <h3>Giá trị ADC: <span id="adcValue">0</span></h3>
+    </div>
 
-<script>
+  </div>
 
-const TOKEN = "aDr0xW5cnhpazhuPPuIDUQWZGmtRtAhY";
+  <canvas id="chart"></canvas>
 
-// ===== BIỂU ĐỒ =====
-let ctx = document.getElementById('chart').getContext('2d');
+  <script>
 
-let chart = new Chart(ctx,{
-  type:'line',
-  data:{
-    labels:[],
-    datasets:[{
-      label:'Mực nước (cm)',
-      data:[],
-      borderColor:'#3b82f6',
-      borderWidth:3,
-      fill:false,
-      tension:0.3
-    }]
-  },
-  options:{
-    responsive:true,
-    scales:{
-      y:{min:2,max:6}
-    }
+    const TOKEN = "rdP1f15mGDbn17U9FV0ITcGh6XNTmMol";
+
+    // ===== BIỂU ĐỒ =====
+    let ctx = document.getElementById('chart').getContext('2d');
+
+    let chart = new Chart(ctx,{
+      type:'line',
+      data:{
+        labels:[],
+        datasets:[{
+          label:'Mực nước (cm)',
+          data:[],
+          borderColor:'#3b82f6',
+          borderWidth:3,
+          fill:false,
+          tension:0.3
+        }]
+      },
+      options:{
+        responsive:true,
+        scales:{
+          y:{min:0,max:10}
+        }
+      }
+    });
+
+    // ===== HÀM LẤY DATA AN TOÀN =====
+    async function getBlynk(pin){
+  let res = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&${pin}`);
+  let text = await res.text();
+
+  if(text.includes("Invalid token")){
+    throw new Error("Token không hợp lệ");
   }
-});
 
-// ===== HÀM CHUYỂN DATA BLYNK =====
-function cleanValue(value){
-  try{
-    let parsed = JSON.parse(value);
-    return parsed[0];
-  }catch{
-    return value;
-  }
+  return text.trim(); // CHỈ TRẢ VỀ TEXT
 }
+    // ===== FETCH =====
+    async function updateData(){
 
-// ===== FETCH =====
-async function updateData(){
+      try{
 
-  try{
+        let adc = parseInt(await getBlynk("V0"));
+        let cm  = parseFloat(await getBlynk("V1"));
+        let st  = parseInt(await getBlynk("V2"));
 
-    let adcRes = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V0`);
-    let cmRes  = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V1`);
-    let stRes  = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V2`);
+        if(isNaN(adc) || isNaN(cm) || isNaN(st)) return;
 
-    let adc = cleanValue(await adcRes.text());
-    let cm  = cleanValue(await cmRes.text());
-    let st  = cleanValue(await stRes.text());
+        document.getElementById("adcValue").innerText = adc;
+        document.getElementById("waterValue").innerText = cm.toFixed(2) + " cm";
 
-    adc = parseInt(adc);
-    cm  = parseFloat(cm);
-    st  = parseInt(st);
+        // Tính % nước
+        let percent = (cm / 10) * 100;
+        percent = Math.max(0, Math.min(100, percent));
+        document.getElementById("water").style.height = percent + "%";
 
-    document.getElementById("adcValue").innerText = adc;
-    document.getElementById("waterValue").innerText = cm.toFixed(2) + " cm";
+        let statusBox = document.getElementById("statusBox");
+        statusBox.className = "status";
 
-    // Tính % nước
-    let percent = ((cm - 2) / 4) * 100;
-    percent = Math.max(0, Math.min(100, percent));
-    document.getElementById("water").style.height = percent + "%";
+        if(st === 0){
+          statusBox.innerText = "AN TOÀN";
+          statusBox.classList.add("safe");
+        }
+        else if(st === 1){
+          statusBox.innerText = "CẢNH BÁO";
+          statusBox.classList.add("warning");
+        }
+        else{
+          statusBox.innerText = "RẤT NGUY HIỂM";
+          statusBox.classList.add("danger");
+        }
 
-    let statusBox = document.getElementById("statusBox");
-    statusBox.className = "status";
+        let time = new Date().toLocaleTimeString();
 
-    if(st === 0){
-      statusBox.innerText = "AN TOÀN";
-      statusBox.classList.add("safe");
+        chart.data.labels.push(time);
+        chart.data.datasets[0].data.push(cm);
+
+        if(chart.data.labels.length > 20){
+          chart.data.labels.shift();
+          chart.data.datasets[0].data.shift();
+        }
+
+        chart.update();
+
+      }catch(error){
+        console.log("Lỗi:", error.message);
+        document.getElementById("statusBox").innerText="MẤT KẾT NỐI";
+        document.getElementById("statusBox").className="status danger";
+      }
     }
-    else if(st === 1){
-      statusBox.innerText = "CẢNH BÁO";
-      statusBox.classList.add("warning");
-    }
-    else{
-      statusBox.innerText = "RẤT NGUY HIỂM";
-      statusBox.classList.add("danger");
-    }
 
-    let time = new Date().toLocaleTimeString();
+    setInterval(updateData,1000);
+    updateData();
 
-    chart.data.labels.push(time);
-    chart.data.datasets[0].data.push(cm);
-
-    if(chart.data.labels.length > 20){
-      chart.data.labels.shift();
-      chart.data.datasets[0].data.shift();
-    }
-
-    chart.update();
-
-  }catch(error){
-    console.log("Lỗi kết nối Blynk:", error);
-  }
-}
-
-setInterval(updateData,1000);
-updateData();
-
-</script>
+  </script>
 
 </body>
 </html>
