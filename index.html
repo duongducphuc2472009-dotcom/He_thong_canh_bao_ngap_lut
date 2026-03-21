@@ -11,37 +11,55 @@ body{
   font-family:Segoe UI;
   background:#0f172a;
   color:white;
-  text-align:center;
+  height:100vh;
+  overflow:hidden;
 }
 
+/* HEADER */
 .header{
-  padding:20px;
+  height:60px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
   background:#1e293b;
-  font-size:28px;
+  font-size:22px;
   font-weight:bold;
 }
 
-.grid{
-  display:flex;
-  justify-content:center;
-  gap:40px;
-  margin-top:30px;
-  flex-wrap:wrap;
+/* MAIN GRID */
+.main{
+  display:grid;
+  grid-template-columns: 320px 1fr;
+  height:calc(100vh - 60px);
+  gap:15px;
+  padding:15px;
 }
 
+/* LEFT PANEL */
+.left{
+  display:flex;
+  flex-direction:column;
+  gap:15px;
+}
+
+/* CARD STYLE */
 .card{
   background:#1e293b;
-  padding:20px;
   border-radius:15px;
-  width:260px;
+  padding:15px;
+  box-shadow:0 0 15px rgba(0,0,0,0.3);
+  text-align:center;
 }
 
+/* GAUGE */
 #riverBox{
-  width:150px;
-  height:350px;
-  border:3px solid white;
-  margin:auto;
+  width:100px;
+  height:220px;
+  border:3px solid #94a3b8;
+  margin:10px auto;
   position:relative;
+  border-radius:8px;
+  overflow:hidden;
 }
 
 #water{
@@ -53,11 +71,19 @@ body{
   transition:0.5s;
 }
 
+/* TEXT */
+.valueBig{
+  font-size:24px;
+  margin-top:10px;
+}
+
+/* STATUS */
 .status{
-  font-size:22px;
-  padding:12px;
+  font-size:18px;
+  padding:10px;
   border-radius:10px;
   font-weight:bold;
+  margin:10px 0;
 }
 
 .safe{background:#16a34a;}
@@ -68,14 +94,32 @@ body{
   50%{opacity:0.5;}
 }
 
-.valueBig{
-  font-size:32px;
-  margin:10px 0;
+/* RIGHT PANEL (CHART) */
+.right{
+  background:#1e293b;
+  border-radius:15px;
+  padding:15px;
+  display:flex;
+  flex-direction:column;
+  box-shadow:0 0 15px rgba(0,0,0,0.3);
 }
 
-canvas{
-  max-width:900px;
-  margin-top:40px;
+/* CHART BOX */
+.chartBox{
+  flex:1;
+  position:relative;
+}
+
+.chartBox canvas{
+  width:100% !important;
+  height:100% !important; /* 🔥 FIX CHART */
+}
+
+/* TITLE */
+.card h3, .right h3{
+  margin:5px 0 10px;
+  font-size:18px;
+  color:#cbd5f5;
 }
 </style>
 </head>
@@ -86,25 +130,36 @@ canvas{
 🌊 HỆ THỐNG CẢNH BÁO NGẬP LỤT
 </div>
 
-<div class="grid">
+<div class="main">
 
-<div class="card">
-<h2>Mực nước</h2>
-<div id="riverBox">
-<div id="water"></div>
-</div>
-<div class="valueBig" id="waterValue">0 cm</div>
-</div>
+  <!-- LEFT -->
+  <div class="left">
 
-<div class="card">
-<h2>Trạng thái</h2>
-<div id="statusBox" class="status safe">AN TOÀN</div>
-<h3>Giá trị ADC: <span id="adcValue">0</span></h3>
-</div>
+    <div class="card">
+      <h3>Mực nước</h3>
+      <div id="riverBox">
+        <div id="water"></div>
+      </div>
+      <div class="valueBig" id="waterValue">0 cm</div>
+    </div>
+
+    <div class="card">
+      <h3>Trạng thái</h3>
+      <div id="statusBox" class="status safe">AN TOÀN</div>
+      <p>Giá trị ADC: <span id="adcValue">0</span></p>
+    </div>
+
+  </div>
+
+  <!-- RIGHT -->
+  <div class="right">
+    <h3>Biểu đồ mực nước (Realtime)</h3>
+    <div class="chartBox">
+      <canvas id="chart"></canvas>
+    </div>
+  </div>
 
 </div>
-
-<canvas id="chart"></canvas>
 
 <script>
 
@@ -128,6 +183,7 @@ let chart = new Chart(ctx,{
   },
   options:{
     responsive:true,
+    maintainAspectRatio:false, // 🔥 QUAN TRỌNG
     scales:{
       y:{min:0,max:10}
     }
@@ -143,68 +199,68 @@ async function getBlynk(pin){
     throw new Error("Token không hợp lệ");
   }
 
-  return text.trim(); // CHỈ TRẢ VỀ TEXT
+  try{
+    let parsed = JSON.parse(text);
+    return parsed[0];
+  }catch{
+    return text;
+  }
+  return text.trim();
 }
+
 // ===== FETCH =====
 async function updateData(){
 
   try{
+    let adc = await getBlynk("v0");
 
-    let adc = parseInt(await getBlynk("V0"));
-    let cm  = parseFloat(await getBlynk("V1"));
-    let st  = parseInt(await getBlynk("V2"));
+    adc = Number(adc);
 
-    if(isNaN(adc) || isNaN(cm) || isNaN(st)) return;
+    let waterLevel = (adc / 4095) * 10;
 
     document.getElementById("adcValue").innerText = adc;
-    document.getElementById("waterValue").innerText = cm.toFixed(2) + " cm";
+    document.getElementById("waterValue").innerText = waterLevel.toFixed(1) + " cm";
 
-    // Tính % nước
-    let percent = (cm / 10) * 100;
-    percent = Math.max(0, Math.min(100, percent));
+    let percent = (waterLevel / 10) * 100;
     document.getElementById("water").style.height = percent + "%";
 
     let statusBox = document.getElementById("statusBox");
-    statusBox.className = "status";
 
-    if(st === 0){
+    if(waterLevel < 3){
       statusBox.innerText = "AN TOÀN";
-      statusBox.classList.add("safe");
+      statusBox.className = "status safe";
     }
-    else if(st === 1){
+    else if(waterLevel < 7){
       statusBox.innerText = "CẢNH BÁO";
-      statusBox.classList.add("warning");
+      statusBox.className = "status warning";
     }
     else{
-      statusBox.innerText = "RẤT NGUY HIỂM";
-      statusBox.classList.add("danger");
+      statusBox.innerText = "NGUY HIỂM";
+      statusBox.className = "status danger";
     }
 
     let time = new Date().toLocaleTimeString();
 
     chart.data.labels.push(time);
-    chart.data.datasets[0].data.push(cm);
+    chart.data.datasets[0].data.push(waterLevel);
 
-    if(chart.data.labels.length > 20){
+    if(chart.data.labels.length > 15){
       chart.data.labels.shift();
       chart.data.datasets[0].data.shift();
     }
 
     chart.update();
 
-  }catch(error){
-    console.log("Lỗi:", error.message);
-    document.getElementById("statusBox").innerText="MẤT KẾT NỐI";
-    document.getElementById("statusBox").className="status danger";
+  }catch(err){
+    console.error(err);
   }
+
 }
 
-setInterval(updateData,1000);
-updateData();
+// ===== LOOP =====
+setInterval(updateData,2000);
 
 </script>
 
 </body>
 </html>
-
-
