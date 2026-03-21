@@ -11,48 +11,34 @@ body{
   font-family:Segoe UI;
   background:#0f172a;
   color:white;
-  height:100vh;
-  overflow:hidden;
-}
-
-/* HEADER */
-.header{
-  padding:15px;
-  background:#1e293b;
-  font-size:24px;
-  font-weight:bold;
   text-align:center;
 }
 
-/* MAIN */
-.wrapper{
-  display:flex;
-  height:calc(100vh - 60px);
+.header{
+  padding:20px;
+  background:#1e293b;
+  font-size:28px;
+  font-weight:bold;
 }
 
-/* LEFT */
 .grid{
   display:flex;
-  flex-direction:column;
   justify-content:center;
-  align-items:center;
-  gap:20px;
-  width:320px;
+  gap:40px;
+  margin-top:30px;
+  flex-wrap:wrap;
 }
 
-/* CARD */
 .card{
   background:#1e293b;
   padding:20px;
   border-radius:15px;
   width:260px;
-  text-align:center;
 }
 
-/* GAUGE */
 #riverBox{
-  width:120px;
-  height:250px;
+  width:150px;
+  height:350px;
   border:3px solid white;
   margin:auto;
   position:relative;
@@ -67,16 +53,9 @@ body{
   transition:0.5s;
 }
 
-/* TEXT */
-.valueBig{
-  font-size:28px;
-  margin:10px 0;
-}
-
-/* STATUS */
 .status{
-  font-size:20px;
-  padding:10px;
+  font-size:22px;
+  padding:12px;
   border-radius:10px;
   font-weight:bold;
 }
@@ -89,20 +68,14 @@ body{
   50%{opacity:0.5;}
 }
 
-/* RIGHT */
-.chartContainer{
-  flex:1;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  padding:20px;
+.valueBig{
+  font-size:32px;
+  margin:10px 0;
 }
 
-/* 🔥 FIX CHART DỨT ĐIỂM */
-#chart{
-  width:100% !important;
-  height:400px !important; /* đảm bảo luôn hiển thị */
-  max-width:none !important;
+canvas{
+  max-width:900px;
+  margin-top:40px;
 }
 </style>
 </head>
@@ -113,33 +86,25 @@ body{
 🌊 HỆ THỐNG CẢNH BÁO NGẬP LỤT
 </div>
 
-<div class="wrapper">
+<div class="grid">
 
-  <!-- LEFT -->
-  <div class="grid">
+<div class="card">
+<h2>Mực nước</h2>
+<div id="riverBox">
+<div id="water"></div>
+</div>
+<div class="valueBig" id="waterValue">0 cm</div>
+</div>
 
-    <div class="card">
-      <h2>Mực nước</h2>
-      <div id="riverBox">
-        <div id="water"></div>
-      </div>
-      <div class="valueBig" id="waterValue">0 cm</div>
-    </div>
-
-    <div class="card">
-      <h2>Trạng thái</h2>
-      <div id="statusBox" class="status safe">AN TOÀN</div>
-      <h3>Giá trị ADC: <span id="adcValue">0</span></h3>
-    </div>
-
-  </div>
-
-  <!-- RIGHT -->
-  <div class="chartContainer">
-    <canvas id="chart"></canvas>
-  </div>
+<div class="card">
+<h2>Trạng thái</h2>
+<div id="statusBox" class="status safe">AN TOÀN</div>
+<h3>Giá trị ADC: <span id="adcValue">0</span></h3>
+</div>
 
 </div>
+
+<canvas id="chart"></canvas>
 
 <script>
 
@@ -191,8 +156,5 @@ async function getBlynk(pin){
 async function updateData(){
 
 @@ -213,3 +207,4 @@
-
-</script>
-
 </body>
 </html>
