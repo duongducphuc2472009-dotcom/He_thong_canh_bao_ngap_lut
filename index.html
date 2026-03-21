@@ -108,7 +108,7 @@ canvas{
 
 <script>
 
-const TOKEN = "DAN_TOKEN_CUA_BAN_VAO_DAY";
+const TOKEN = "aDr0xW5cnhpazhuPPuIDUQWZGmtRtAhY";
 
 // ===== BIỂU ĐỒ =====
 let ctx = document.getElementById('chart').getContext('2d');
@@ -129,21 +129,19 @@ let chart = new Chart(ctx,{
   options:{
     responsive:true,
     scales:{
-      y:{min:0,max:10}
+      y:{min:2,max:6}
     }
   }
 });
 
-// ===== HÀM LẤY DATA (ĐÃ FIX) =====
-async function getBlynk(pin){
-  let res = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&${pin}`);
-  let text = await res.text();
-
-  if(text.includes("Invalid token")){
-    throw new Error("Token không hợp lệ");
+// ===== HÀM CHUYỂN DATA BLYNK =====
+function cleanValue(value){
+  try{
+    let parsed = JSON.parse(value);
+    return parsed[0];
+  }catch{
+    return value;
   }
-
-  return text.trim(); // FIX QUAN TRỌNG
 }
 
 // ===== FETCH =====
@@ -151,16 +149,23 @@ async function updateData(){
 
   try{
 
-    let adc = parseInt(await getBlynk("V0"));
-    let cm  = parseFloat(await getBlynk("V1"));
-    let st  = parseInt(await getBlynk("V2"));
+    let adcRes = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V0`);
+    let cmRes  = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V1`);
+    let stRes  = await fetch(`https://blynk.cloud/external/api/get?token=${TOKEN}&V2`);
 
-    if(isNaN(adc) || isNaN(cm) || isNaN(st)) return;
+    let adc = cleanValue(await adcRes.text());
+    let cm  = cleanValue(await cmRes.text());
+    let st  = cleanValue(await stRes.text());
+
+    adc = parseInt(adc);
+    cm  = parseFloat(cm);
+    st  = parseInt(st);
 
     document.getElementById("adcValue").innerText = adc;
     document.getElementById("waterValue").innerText = cm.toFixed(2) + " cm";
 
-    let percent = (cm / 10) * 100;
+    // Tính % nước
+    let percent = ((cm - 2) / 4) * 100;
     percent = Math.max(0, Math.min(100, percent));
     document.getElementById("water").style.height = percent + "%";
 
@@ -193,9 +198,7 @@ async function updateData(){
     chart.update();
 
   }catch(error){
-    console.log("Lỗi:", error.message);
-    document.getElementById("statusBox").innerText="MẤT KẾT NỐI";
-    document.getElementById("statusBox").className="status danger";
+    console.log("Lỗi kết nối Blynk:", error);
   }
 }
 
