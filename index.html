@@ -12,7 +12,7 @@ body{
   background:#0f172a;
   color:white;
   height:100vh;
-  overflow:hidden; /* không scroll */
+  overflow:hidden;
 }
 
 /* HEADER */
@@ -24,10 +24,10 @@ body{
   text-align:center;
 }
 
-/* LAYOUT MỚI */
+/* MAIN */
 .wrapper{
   display:flex;
-  height:calc(100vh - 70px);
+  height:calc(100vh - 60px);
 }
 
 /* LEFT */
@@ -67,6 +67,12 @@ body{
   transition:0.5s;
 }
 
+/* TEXT */
+.valueBig{
+  font-size:28px;
+  margin:10px 0;
+}
+
 /* STATUS */
 .status{
   font-size:20px;
@@ -83,12 +89,7 @@ body{
   50%{opacity:0.5;}
 }
 
-.valueBig{
-  font-size:28px;
-  margin:10px 0;
-}
-
-/* RIGHT (CHART) */
+/* RIGHT */
 .chartContainer{
   flex:1;
   display:flex;
@@ -97,11 +98,11 @@ body{
   padding:20px;
 }
 
-/* QUAN TRỌNG: FIX CHART */
+/* 🔥 FIX CHART DỨT ĐIỂM */
 #chart{
   width:100% !important;
-  height:100% !important;
-  max-width:none !important; /* bỏ giới hạn cũ */
+  height:400px !important; /* đảm bảo luôn hiển thị */
+  max-width:none !important;
 }
 </style>
 </head>
