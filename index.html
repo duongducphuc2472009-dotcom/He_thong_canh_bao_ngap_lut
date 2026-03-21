@@ -12,53 +12,50 @@ body{
   background:#0f172a;
   color:white;
   height:100vh;
-  overflow:hidden;
+  overflow:hidden; /* không scroll */
 }
 
 /* HEADER */
 .header{
-  height:60px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  padding:15px;
   background:#1e293b;
   font-size:24px;
   font-weight:bold;
+  text-align:center;
 }
 
-/* MAIN LAYOUT */
-.main{
-  display:grid;
-  grid-template-columns: 320px 1fr;
-  height:calc(100vh - 60px);
-  gap:15px;
-  padding:15px;
+/* LAYOUT MỚI */
+.wrapper{
+  display:flex;
+  height:calc(100vh - 70px);
 }
 
-/* LEFT PANEL */
-.left{
+/* LEFT */
+.grid{
   display:flex;
   flex-direction:column;
-  gap:15px;
+  justify-content:center;
+  align-items:center;
+  gap:20px;
+  width:320px;
 }
 
 /* CARD */
 .card{
   background:#1e293b;
+  padding:20px;
   border-radius:15px;
-  padding:15px;
+  width:260px;
   text-align:center;
 }
 
 /* GAUGE */
 #riverBox{
-  width:100px;
-  height:220px;
-  border:3px solid #94a3b8;
-  margin:10px auto;
+  width:120px;
+  height:250px;
+  border:3px solid white;
+  margin:auto;
   position:relative;
-  border-radius:10px;
-  overflow:hidden;
 }
 
 #water{
@@ -70,15 +67,9 @@ body{
   transition:0.5s;
 }
 
-/* TEXT */
-.valueBig{
-  font-size:24px;
-  margin:10px 0;
-}
-
 /* STATUS */
 .status{
-  font-size:18px;
+  font-size:20px;
   padding:10px;
   border-radius:10px;
   font-weight:bold;
@@ -92,30 +83,25 @@ body{
   50%{opacity:0.5;}
 }
 
-/* RIGHT PANEL */
-.right{
-  background:#1e293b;
-  border-radius:15px;
-  padding:15px;
-  display:flex;
-  flex-direction:column;
+.valueBig{
+  font-size:28px;
+  margin:10px 0;
 }
 
-/* CHART BOX */
-.chartBox{
+/* RIGHT (CHART) */
+.chartContainer{
   flex:1;
-  position:relative;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  padding:20px;
 }
 
-/* QUAN TRỌNG: để chart hiện */
-.chartBox canvas{
+/* QUAN TRỌNG: FIX CHART */
+#chart{
   width:100% !important;
   height:100% !important;
-}
-
-/* TITLE */
-h2,h3{
-  margin:5px 0 10px;
+  max-width:none !important; /* bỏ giới hạn cũ */
 }
 </style>
 </head>
@@ -126,10 +112,10 @@ h2,h3{
 🌊 HỆ THỐNG CẢNH BÁO NGẬP LỤT
 </div>
 
-<div class="main">
+<div class="wrapper">
 
   <!-- LEFT -->
-  <div class="left">
+  <div class="grid">
 
     <div class="card">
       <h2>Mực nước</h2>
@@ -148,11 +134,8 @@ h2,h3{
   </div>
 
   <!-- RIGHT -->
-  <div class="right">
-    <h2>Biểu đồ</h2>
-    <div class="chartBox">
-      <canvas id="chart"></canvas>
-    </div>
+  <div class="chartContainer">
+    <canvas id="chart"></canvas>
   </div>
 
 </div>
